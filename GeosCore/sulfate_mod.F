@@ -2532,6 +2532,9 @@
       USE TIME_MOD,           ONLY : GET_TS_CHEM, GET_MONTH
       USE TIME_MOD,           ONLY : ITS_A_NEW_MONTH
       USE HCO_INTERFACE_MOD,  ONLY : GetHcoDiagn
+      !GanLuo (EEM)
+      USE WETSCAV_MOD,        ONLY : QQ3D, PSO4s
+      USE HCO_INTERFACE_MOD,  ONLY : GetHcoDiagn
 #if defined( BPCH_DIAG ) 
       USE CMN_DIAG_MOD
       USE DIAG_MOD,           ONLY : AD05
@@ -3037,9 +3040,18 @@
 
          ! Get liquid water content [m3 H2O/m3 air] within cloud from met flds
          ! Units: [kg H2O/kg air] * [kg air/m3 air] * [m3 H2O/1e3 kg H2O]
-         LWC     = State_Met%QL(I,J,L) * State_Met%AIRDEN(I,J,L) *
+         ! GanLuo (EEM)
+!         LWC     = State_Met%QL(I,J,L) * State_Met%AIRDEN(I,J,L) *
+!     &             1e-3_fp
+         IF(SIZE(QQ3D)>1)THEN
+            LWC  = State_Met%QL(I,J,L) * State_Met%AIRDEN(I,J,L) *
+     &             1e-3_fp + MAX(0.d0, QQ3D(L,I,J) * DTCHEM)
+         ELSE
+            LWC  = State_Met%QL(I,J,L) * State_Met%AIRDEN(I,J,L) * 
      &             1e-3_fp
-
+         ENDIF
+         LWC     = MAX(0.d0, LWC)
+ 
          ! LWC is a grid-box averaged quantity. To improve the representation 
          ! of sulfate chemistry, we divide LWC by the cloud fraction and 
          ! compute sulfate chemistry based on the LWC within the cloud.  We 
@@ -3780,6 +3792,12 @@
          ! Add L5S (qjc, 11/04/16)
          PSO4_SO2(I,J,L) = L1 + L2S + L3S + L4S + L5S + PSO4E + SR
 
+         ! GanLuo (EEM)
+         PSO4s(I,J,L)    = L2S + L3S + L4S + L5S + PSO4E + PSO4F + SR
+         PSO4s(I,J,L)    = PSO4s(I,J,L) *
+     &                     State_Met%AD(I,J,L) / (AIRMW / 
+     &                     State_Chm%SpcData(id_SO4)%Info%emMW_g )
+  
          ! Production of sulfate on sea salt
          PSO4_ss (I,J,L) = PSO4F
 

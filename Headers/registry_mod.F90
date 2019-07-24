@@ -886,6 +886,7 @@ CONTAINS
 
     ! Throw an error if not found
     IF ( .not. Found ) RC = GC_FAILURE
+    ! WRITE (6 , * ) 'Found', Found  !!!!!!!!!!!!!
 
   END SUBROUTINE Registry_Lookup
 !EOC

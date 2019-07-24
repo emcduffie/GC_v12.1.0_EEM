@@ -54,7 +54,7 @@
 #endif
       INTEGER, PARAMETER :: PD22=76
       INTEGER, PARAMETER :: PD43=4
-      INTEGER, PARAMETER :: PD52=6
+      INTEGER, PARAMETER :: PD52=6  
       INTEGER, PARAMETER :: PD55=3
       ! Potential temperature diagnostic (hotp 7/31/09)
       INTEGER, PARAMETER :: PD57=1           

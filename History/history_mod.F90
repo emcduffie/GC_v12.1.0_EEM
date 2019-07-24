@@ -1742,7 +1742,7 @@ CONTAINS
 
        ! Trap potential not found error
        IF ( RC /= GC_SUCCESS ) THEN
-          ErrMsg = 'Could not locate ' // TRIM( ItemName )  // &
+          ErrMsg = 'Could not locate ' // TRIM( ItemName )     // &
                    ' chemistry state registry.'
           CALL GC_Error( ErrMsg, RC, ThisLoc )
           RETURN

@@ -448,7 +448,7 @@
          ! Philip et al. (2014)
          OCFPOA(:,:)  = OMOC(:,:) ! OM/OC for POA
          OCFOPOA(:,:) = OMOC(:,:) ! OM/OC for OPOA, OCPI, and OCPO
-
+         
       ELSE
 
          ! Use default global mean OM/OC recommended by the Aerosols WG
@@ -456,7 +456,10 @@
          OCFOPOA(:,:) = 2.1e+0_fp ! OM/OC for OPOA, OCPI, and OCPO
 
       ENDIF
-
+         State_Chm%OMOC_POA(:,:) = OCFPOA(:,:)
+         State_Chm%OMOC_OPOA(:,:) = OCFOPOA(:,:)
+         !State_Chm%OMOCPOA(:,,:) = State_Chm%OMOCPOA(:,:,1)
+         !State_Chm%OMOCOPOA(:,:,:) = State_Chm%OMOCOPOA(:,:,1)
       !=================================================================
       ! Compute growth factors at 35% RH
       !
@@ -666,8 +669,12 @@
             ENDIF
 
             ! Hydrophilic OC [kg/m3]
+            !!EEM: Added 12/3/18 to account for OPOA1&2 in PM2.5!!
+            !If ( IS_OPOA ) THEN
+            ! OCPI(I,J,L) = ( Spc(I,J,L,id_OPOA1) + Spc(I,J,L,id_OPOA2) )
+     &      !                 * OCFOPOA(I,J) / AIRVOL(I,J,L)
             IF ( IS_OCPI ) THEN
-               OCPI(I,J,L) = Spc(I,J,L,id_OCPI)
+             OCPI(I,J,L) = Spc(I,J,L,id_OCPI)
      &                       * OCFOPOA(I,J) / AIRVOL(I,J,L)
             ENDIF
 
@@ -946,8 +953,20 @@
          ! Use simple SOA by default over complex SOA in calculations
          IF ( Is_SimpleSOA ) THEN
             OCPISOA(I,J,L) = 
-     &        ( Spc(I,J,L,id_OCPI) * OCFOPOA(I,J) +
-     &          Spc(I,J,L,id_SOAS)                  ) / AIRVOL(I,J,L)
+     &         Spc(I,J,L,id_SOAS) / AIRVOL(I,J,L)
+         !!!!!EEM: Added cases to account for SVPOA in simple mechanism (12/3/18) !!!!!!!
+            IF ( IS_OPOA ) THEN ! hotp 7/28/10
+               OCPISOA(I,J,L) = OCPISOA(I,J,L) +
+     &                          ( Spc(I,J,L,id_OPOA1)
+     &                          + Spc(I,J,L,id_OPOA2) )
+     &                          * OCFOPOA(I,J) / AIRVOL(I,J,L)
+            ENDIF
+
+            IF ( IS_OCPI ) THEN  ! hotp 7/28/10
+               OCPISOA(I,J,L) = OCPISOA(I,J,L)
+     &                          + Spc(I,J,L,id_OCPI)
+     &                          * OCFOPOA(I,J) / AIRVOL(I,J,L) 
+            ENDIF
 
          ELSEIF ( Is_ComplexSOA ) THEN
 
@@ -1008,6 +1027,8 @@
          !        2.10 (OCPO + 1.16 OCPI) + 1.16 SOA    +
          !        DST1 + 0.38 DST2 + 1.86 SALA + SOAGX + SOAMG
          !
+         ! !!EEM: OPOA added to the sum to account for OPOA1-2 with SVPOA (12/3/18)
+         !
          ! NOTES:
          ! - We apply growth factors at 35% RH (computed above): 
          !    1.33 for SO4, NIT, and NH4
@@ -1031,6 +1052,7 @@
      &               + SO4(I,J,L)        * SIA_GROWTH
      &               + BCPI(I,J,L)
      &               + BCPO(I,J,L)
+     &               + OPOA(I,J,L)       * ORG_GROWTH
      &               + OCPO(I,J,L)
      &               + OCPI(I,J,L)       * ORG_GROWTH
      &               + SALA(I,J,L)       * SSA_GROWTH
@@ -1282,6 +1304,8 @@
 !  17 Jan 2018 - E. Lundgren - Fix bpch diagnostic indexing for aer aq volume
 !                              and SOA AOD from aq isoprene (34->58; 35->59)
 !  11 May 2018 - R. Yantosca - Rename LSOA to Is_ComplexSOA for clarity
+!  20 May 2019 - E. McDuffie - Implement C.D. Holmes's updates to use ISORROPIA
+!                              for aerosol SA and Vol
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -1295,7 +1319,7 @@
       INTEGER             :: AA, IWV, IIWV, NWVS, IR, NRT
       REAL*4              :: TEMP(IIPAR,JJPAR,LGLOB)
       REAL(fp)            :: TEMP2(IIPAR,JJPAR,LLPAR)
-      REAL(fp)            :: MSDENS(NAER), DRYAREA
+      REAL(fp)            :: MSDENS(NAER), DRYAREA, VDRY, VH2O
       REAL(f8)            :: XTAU
       REAL*8              :: BCSCAT_AE  !(xnw, 8/24/15)
 
@@ -1770,6 +1794,7 @@
 !$OMP+PRIVATE( IR                                               )
 #endif
 !$OMP+PRIVATE( RHOSTRAT, RAER,    SADSTRAT, XSASTRAT            )
+!$OMP+PRIVATE( VDRY,     VH2O                                   )
 !$OMP+SCHEDULE( DYNAMIC )
          DO L = 1, LLPAR
          DO J = 1, JJPAR
@@ -2028,6 +2053,43 @@
                ! Wet dust WTAREA and WERADIUS are archived in dust_mod.f.
                !========================================================
             
+               ! For SO4-NIT-NH4 aerosol, re-calculate the wet effective 
+               ! radius using the water content from ISORROPIA. 
+               ! This new effective radius will be used for surface area
+               ! used in heterogeneous chemistry. We don't use this
+               ! effective radius in the optics above (OD, scattering, 
+               ! absorption) because the index of refraction, phase
+               ! function, and Q must all be consistent with the radius and
+               ! composition. 
+               ! NOTE: ISORROPIA water includes fine seas salt aerosol, 
+               ! which we are assigning all to SNA here without decreasing
+               ! the sea salt volume. This double counts the fine SSA
+               ! volume. (cdholmes, 5/17/2019)
+
+               IF (N==1) THEN
+
+                   ! Volume of water, m3(H2O)/m3(air)
+                   ! Aero H2O has units g/m3
+                   VH2O = State_Chm%AeroH2O(I,J,L,NDUST+1) / 1e6
+                   ! Volume of dry aerosol, m3(aerosol)/m3(air)
+                   VDry = WAERSL(I,J,L,N) / MSDENS(N)
+
+                   ! Notes of REFF derivation
+                   ! Volume of wet aerosol: VWet = VDry + VH2O [note:
+                   ! this is incorrect but has the correct limits for
+                   ! VH2O/VDry << 1 and VH2O/VDry >>1. It would be 
+                   ! better to use an empirical function for density.]
+                   ! Volume of one dry particle v1dry = 4/3*pi*RDry**3
+                   ! note: RW(1) = RDry]
+                   ! Number of aerosol particles: n = VDry / v1dry
+                   ! Volume of wet aerosol is also VWet = 4/3*pi*RWet**3*n
+                   ! So RWet = (3*VWet / (4 pi n) )**(1/3)
+                   ! RWet = RDry * ( 1 + VH2O/Vdry )**(1/3)
+
+                   ! Wet effective radius, um
+                   REFF = RW(1) * ( 1d0 + VH2O / VDry )**(1d0/3d0)
+               ENDIF
+               
                !get scaling for R and VOL
                SCALER                 = REFF / RW(1)
                SCALEVOL               = SCALER**3
@@ -2043,7 +2105,13 @@
 
                WTAREA(I,J,L,N+NDUST)   = TAREA(I,J,L,N+NDUST)
                WERADIUS(I,J,L,N+NDUST) = ERADIUS(I,J,L,N+NDUST)     
-
+               
+               ! Save aerosol water content. Assume that the increase in volume
+               ! equals the volume of pure water added, m3(H2O)/m3(air)
+               State_Chm%AeroH2O(I,J,L,N+NDUST) = 1e+6_fp *
+     &         WAERSL(I,J,L,N) / MSDENS(N) * (SCALEVOL -1.0D0)
+               
+ 
                !include hydrophobic BC and OC
                !stored separate to hydrophillic in RT variables
                IF ((N.eq.2).or.(N.eq.3)) THEN
@@ -3184,9 +3252,10 @@
          ! AerMassISOA [ug/m3]
          !--------------------------------------
          IF ( State_Diag%Archive_AerMassISOA ) THEN
-            State_Diag%AerMassISOA(I,J,L)     = ( ISOA(I,J,L)          
-     &                                          + ISOAAQ(I,J,L) )      
+            State_Diag%AerMassISOA(I,J,L)     = ( ISOA(I,J,L) )         
      &                                          * kgm3_to_ugm3
+         ! &                                        !  + ISOAAQ(I,J,L) )      !(EEM: Changed 12/3/18)
+ 
          ENDIF
       
          !--------------------------------------
@@ -3240,9 +3309,9 @@
          ! AerMassSAL [ug/m3]
          !--------------------------------------
          IF ( State_Diag%Archive_AerMassSAL ) THEN
-            State_Diag%AerMassSAL(I,J,L)      = ( SALA(I,J,L)       
-     &                                          + SALC(I,J,L) )     
+            State_Diag%AerMassSAL(I,J,L)      = ( SALA(I,J,L) )      
      &                                        * kgm3_to_ugm3
+         ! &                                       !   + SALC(I,J,L) )     !!(EEM: changed 12/1/18)
          ENDIF
       
          !--------------------------------------

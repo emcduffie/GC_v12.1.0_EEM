@@ -595,7 +595,9 @@
       USE Species_Mod,        ONLY : Species
       USE WETSCAV_MOD,        ONLY : WASHOUT
       USE WETSCAV_MOD,        ONLY : LS_K_RAIN
-      USE WETSCAV_MOD,        ONLY : LS_F_PRIME
+      !GanLuo (EEM)
+      !USE WETSCAV_MOD,        ONLY : LS_F_PRIME
+      USE WETSCAV_MOD,        ONLY : CONV_F_PRIME
 !
 ! !INPUT PARAMETERS:
 !  
@@ -1337,8 +1339,11 @@
 
                   ! Compute K_RAIN and F_WASHOUT based on the flux of precip 
                   ! leaving grid box (K+1). 
-                  K_RAIN   = LS_K_RAIN( QDOWN )
-                  F_WASHOUT= LS_F_PRIME( QDOWN, K_RAIN ) 
+                  ! GanLuo (EEM)
+                  ! K_RAIN   = LS_K_RAIN( QDOWN )
+                  ! F_WASHOUT= LS_F_PRIME( QDOWN, K_RAIN ) 
+                  K_RAIN   = LS_K_RAIN( QDOWN, 2e-6_fp )
+                  F_WASHOUT= CONV_F_PRIME( QDOWN, K_RAIN, SDT ) 
 
                   ! Call WASHOUT to compute the fraction of species lost
                   ! to washout in grid box (I,J,K)

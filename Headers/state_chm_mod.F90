@@ -116,6 +116,12 @@ MODULE State_Chm_Mod
      REAL(fp),          POINTER :: AeroRadi   (:,:,:,:) ! Aerosol Radius [cm]
      REAL(fp),          POINTER :: WetAeroArea(:,:,:,:) ! Aerosol Area [cm2/cm3]
      REAL(fp),          POINTER :: WetAeroRadi(:,:,:,:) ! Aerosol Radius [cm]
+     !EEM: 12/10/18 - added for Shah N2O5 updates
+     REAL(fp),          POINTER :: AeroH2O    (:,:,:,:) ! Aerosol Water [cm3/cm3]
+     REAL(fp),          POINTER :: GammaN2O5  (:,:,:,:) ! N2O5 aerosol uptake [unitless]
+     REAL(fp),          POINTER :: OMOC_POA   (:,:    ) ! OM:OC Ratio (OCFPOA) [unitless]
+     REAL(fp),          POINTER :: OMOC_OPOA  (:,:    ) ! OM:OC Ratio (OCFOPOA) [unitless]
+     !!!
      REAL(fp),          POINTER :: SSAlk      (:,:,:,:) ! Sea-salt alkalinity[-]
      REAL(fp),          POINTER :: H2O2AfterChem(:,:,:) ! H2O2, SO2 [v/v]
      REAL(fp),          POINTER :: SO2AfterChem (:,:,:) !  after sulfate chem
@@ -242,6 +248,7 @@ MODULE State_Chm_Mod
 !                              shared pointers (e.g. species info) until last
 !  01 Nov 2018 - M. Sulprizio- Add SNOW_HG_* and Hg*aq arrays for saving out
 !                              to the Restart collection
+!  23 Aug 2018 - C.D. Holmes - Add aerosol H2O variable
 !EOP
 !------------------------------------------------------------------------------
 !BOC
@@ -415,7 +422,12 @@ CONTAINS
     State_Chm%AeroRadi      => NULL()
     State_Chm%WetAeroArea   => NULL()
     State_Chm%WetAeroRadi   => NULL()
-    
+    !!EEM: 12/10/18 - added for Shah N2O5 update
+    State_Chm%AeroH2O       => NULL()
+    State_Chm%GammaN2O5     => NULL()    
+    State_Chm%OMOC_POA      => NULL()    
+    State_Chm%OMOC_OPOA     => NULL()    
+ 
     ! Isoprene SOA
     State_Chm%pHSav         => NULL()
     State_Chm%HplusSav      => NULL()
@@ -980,7 +992,7 @@ CONTAINS
           CALL GC_CheckVar( 'State_Chm%WetAeroArea', 1, RC )
           IF ( RC /= GC_SUCCESS ) RETURN
        ENDDO
-
+     
        !--------------------------------------------------------------------
        ! WetAeroRadi
        !--------------------------------------------------------------------
@@ -1035,6 +1047,119 @@ CONTAINS
           IF ( RC /= GC_SUCCESS ) RETURN
        ENDDO
 
+
+       !!!EEM: 12/10/18 - added for Shah N2O5 updates
+       !--------------------------------------------------------------------
+       ! AeroH2O
+       !--------------------------------------------------------------------
+       ALLOCATE( State_Chm%AeroH2O( IM, JM, LM, State_Chm%nAero ), STAT=RC )
+       CALL GC_CheckVar( 'State_Chm%AeroH2O', 0, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Chm%AeroH2O = 0.0_fp
+
+       ! Loop over all entries to register each category individually
+       DO N = 1, State_Chm%nAero
+
+          ! Define identifying string
+          SELECT CASE( N )
+             CASE( 1  )
+                chmID = 'AeroH2OMDUST1'
+             CASE( 2  )
+                chmID = 'AeroH2OMDUST2'
+             CASE( 3  )
+                chmID = 'AeroH2OMDUST3'
+             CASE( 4  )
+                chmID = 'AeroH2OMDUST4'
+             CASE( 5  )
+                chmID = 'AeroH2OMDUST5'
+             CASE( 6  )
+                chmID = 'AeroH2OMDUST6'
+             CASE( 7  )
+                chmID = 'AeroH2OMDUST7'
+             CASE( 8  )
+                chmID = 'AeroH2OSULF'
+             CASE( 9  )
+                chmID = 'AeroH2OBC'
+             CASE( 10 )
+                chmID = 'AeroH2OOC'
+             CASE( 11 )
+                chmID = 'AeroH2OSSA'
+             CASE( 12 )
+                chmID = 'AeroH2OSSC'
+             CASE( 13 )
+                chmID = 'AeroH2OBGSULF'
+             CASE( 14 )
+                chmID = 'AeroH2OICEI'
+             CASE DEFAULT
+                ErrMsg = 'State_Chm%nAero exceeds the number of defined'     &
+                         // ' aerosol H2O categories'
+                CALL GC_Error( ErrMsg, RC, ThisLoc )
+                RETURN
+          END SELECT          
+
+          CALL Register_ChmField( am_I_Root, chmID, State_Chm%AeroH2O,   &
+                                  State_Chm, RC,    Ncat=N )
+          CALL GC_CheckVar( 'State_Chm%AeroH2O', 1, RC )
+          IF ( RC /= GC_SUCCESS ) RETURN
+       ENDDO
+       !!!!!!!!!!!!!!!
+     
+       !--------------------------------------------------------------------
+       ! GammaN2O5
+       !--------------------------------------------------------------------
+       ALLOCATE( State_Chm%GammaN2O5( IM, JM, LM, 4 ), STAT=RC )
+       CALL GC_CheckVar( 'State_Chm%GammaN2O5', 0, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Chm%GammaN2O5 = 0.0_fp
+
+       ! Loop over all entries to register each category individually
+       DO N = 1, 4
+
+          ! Define identifying string
+          SELECT CASE( N )
+             CASE( 1  )
+                chmID = 'GammaN2O5H2O'
+             CASE( 2  )
+                chmID = 'GammaN2O5HCl'
+             CASE( 3  )
+                chmID = 'GammaN2O5SS'
+             CASE( 4  )
+                chmID = 'YieldClNO2'
+             CASE DEFAULT
+                ErrMsg = 'State_Chm%GammaN2O5 exceeds the number of defined'     &
+                         // ' N2O5 uptake categories'
+                CALL GC_Error( ErrMsg, RC, ThisLoc )
+                RETURN
+          END SELECT          
+
+          CALL Register_ChmField( am_I_Root, chmID, State_Chm%GammaN2O5,   &
+                                  State_Chm, RC,    Ncat=N )
+          CALL GC_CheckVar( 'State_Chm%GammaN2O5', 1, RC )
+          IF ( RC /= GC_SUCCESS ) RETURN
+       ENDDO
+       !!!!!!!!!!!!!!!
+       !--------------------------------------------------------------------
+       ! OM:OC Ratios
+       !--------------------------------------------------------------------
+       chmId = 'OMOCpoa'
+       ALLOCATE( State_Chm%OMOC_POA( IM, JM ), STAT=RC )
+       CALL GC_CheckVar( 'State_Chm%OMOC_POA', 0, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Chm%OMOC_POA = 0.0_fp
+       CALL Register_ChmField( am_I_Root, chmID, State_Chm%OMOC_POA,            &
+                               State_Chm, RC                                )
+       CALL GC_CheckVar( 'State_Chm%OMOC_POA', 1, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       !--------------------------------------------------------------------
+       chmId = 'OMOCopoa'
+       ALLOCATE( State_Chm%OMOC_OPOA( IM, JM ), STAT=RC )
+       CALL GC_CheckVar( 'State_Chm%OMOC_OPOA', 0, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Chm%OMOC_OPOA = 0.0_fp
+       CALL Register_ChmField( am_I_Root, chmID, State_Chm%OMOC_OPOA,            &
+                               State_Chm, RC                                )
+       CALL GC_CheckVar( 'State_Chm%OMOC_OPOA', 1, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
        !--------------------------------------------------------------------
        ! phSav
        !--------------------------------------------------------------------
@@ -1151,7 +1276,7 @@ CONTAINS
        chmId = 'SSAlkAccum'
        CALL Register_ChmField( am_I_Root, chmID, State_Chm%SSAlk,            &
                                State_Chm, RC,    nCat=1                     )
-       CALL GC_CheckVar( 'State-Chm%SsAlk', 1, RC )
+       CALL GC_CheckVar( 'State_Chm%SSAlk', 1, RC )
        IF ( RC /= GC_SUCCESS ) RETURN
 
        ! Register coarse mode as category 1
@@ -1225,8 +1350,59 @@ CONTAINS
                                State_Chm, RC                                )
        CALL GC_CheckVar( 'State_Chm%WetDepNitrogen', 1, RC )    
        IF ( RC /= GC_SUCCESS ) RETURN
+       
+       !!!!!EEM: Copied code from UCX only mech so gamma values will be
+       !!!!! registered for all full chem simulations. (12/5/18)
+       !--------------------------------------------------------------------
+       ! KHETI_SLA
+       !-------------------------------------------------------------------
+       nKHLSA = 11
+       ALLOCATE( State_Chm%KHETI_SLA ( IM, JM, LM, nKHLSA ), STAT=RC )
+       CALL GC_CheckVar( 'State_Chm%KHETISLA', 0, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Chm%KHETI_SLA = 0.0_fp
+       
+       ! Loop over all entries to register each category individually
+       DO N = 1, nKHLSA
 
+          ! Define identifying string
+          SELECT CASE( N )
+             CASE( 1  ) 
+                chmID = 'KhetiSLAN2O5H2O'
+             CASE( 2  ) 
+                chmID = 'KhetiSLAN2O5HCl'
+             CASE( 3  ) 
+                chmID = 'KhetiSLAClNO3H2O'
+             CASE( 4  ) 
+                chmID = 'KhetiSLAClNO3HCl'
+             CASE( 5  ) 
+                chmID = 'KhetiSLAClNO3HBr'
+             CASE( 6  ) 
+                chmID = 'KhetiSLABrNO3H2O'
+             CASE( 7  ) 
+                chmID = 'KhetiSLABrNO3HCl'
+             CASE( 8  ) 
+                chmID = 'KhetiSLAHOClHCl'
+             CASE( 9  ) 
+                chmID = 'KhetiSLAHOClHBr'
+             CASE( 10 ) 
+                chmID = 'KhetiSLAHOBrHCl'
+             CASE( 11 ) 
+                chmID = 'KhetiSLAHOBrHBr'
+             CASE DEFAULT
+                ErrMsg = 'nKHLSA exceeds the number of defined' &
+                       // ' KHETI_SLA categories'
+                CALL GC_Error( ErrMsg, RC, ThisLoc )
+                RETURN
+          END SELECT
+
+          CALL Register_ChmField( am_I_Root, chmID, State_Chm%KHETI_SLA, &
+                                  State_Chm, RC,    Ncat=N )
+          CALL GC_CheckVar( 'State_Chm%KHETISLA', 1, RC )
+          IF ( RC /= GC_SUCCESS ) RETURN
+       ENDDO
     ENDIF
+
 
     !=======================================================================
     ! Allocate and initialize quantities for wet deposition routines
@@ -1781,6 +1957,35 @@ CONTAINS
        State_Chm%WetAeroRadi => NULL()
     ENDIF
 
+    !!!!!EEM: 12/10/18 - added for Shah N2O5 updates
+    IF ( ASSOCIATED( State_Chm%AeroH2O ) ) THEN
+       DEALLOCATE( State_Chm%AeroH2O, STAT=RC )
+       CALL GC_CheckVar( 'State_Chm%AeroH2O', 2, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Chm%AeroH2O => NULL()
+    ENDIF
+    !!!!!!
+    IF ( ASSOCIATED( State_Chm%GammaN2O5 ) ) THEN
+       DEALLOCATE( State_Chm%GammaN2O5, STAT=RC )
+       CALL GC_CheckVar( 'State_Chm%GammaN2O5', 2, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Chm%GammaN2O5 => NULL()
+    ENDIF
+    
+    IF ( ASSOCIATED( State_Chm%OMOC_POA ) ) THEN
+       DEALLOCATE( State_Chm%OMOC_POA, STAT=RC )
+       CALL GC_CheckVar( 'State_Chm%OMOC_POA', 2, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Chm%OMOC_POA => NULL()
+    ENDIF
+
+    IF ( ASSOCIATED( State_Chm%OMOC_OPOA ) ) THEN
+       DEALLOCATE( State_Chm%OMOC_OPOA, STAT=RC )
+       CALL GC_CheckVar( 'State_Chm%OMOC_OPOA', 2, RC )
+       IF ( RC /= GC_SUCCESS ) RETURN
+       State_Chm%OMOC_OPOA => NULL()
+    ENDIF
+    
     IF ( ASSOCIATED( State_Chm%phSav ) ) THEN
        DEALLOCATE( State_Chm%phSav, STAT=RC  )
        CALL GC_CheckVar( 'State_Chm%phSav', 2, RC )
@@ -2332,7 +2537,7 @@ CONTAINS
                                  // ' (Mischenko)'
           IF ( isUnits ) Units = 'cm2/cm3'
           IF ( isRank  ) Rank  = 3
-
+       
        CASE ( 'WETAERORADIMDUST1' )
           IF ( isDesc  ) Desc  = 'Wet aerosol radius for mineral dust (0.15 um)'
           IF ( isUnits ) Units = 'cm'
@@ -2410,6 +2615,112 @@ CONTAINS
           IF ( isDesc  ) Desc  = 'H-value for Rosenbrock solver'
           IF ( isUnits ) Units = '1'
           IF ( isRank  ) Rank  = 3
+       
+       !!!!!!EEM: 12/10/18 - added for Shah N2O5 updates
+       CASE ( 'AEROH2OMDUST1' )
+          IF ( isDesc  ) Desc  = 'Aerosol H2O content for mineral dust (0.15 um)'
+          IF ( isUnits ) Units = 'cm3(H2O)/cm3(air)'
+          IF ( isRank  ) Rank  = 3
+
+       CASE ( 'AEROH2OMDUST2' )
+          IF ( isDesc  ) Desc  = 'Aerosol H2O content for mineral dust (0.25 um)'
+          IF ( isUnits ) Units = 'cm3(H2O)/cm3(air)'
+          IF ( isRank  ) Rank  = 3
+
+       CASE ( 'AEROH2OMDUST3' )
+          IF ( isDesc  ) Desc  = 'Aerosol H2O content for mineral dust (0.4 um)'
+          IF ( isUnits ) Units = 'cm3(H2O)/cm3(air)'
+          IF ( isRank  ) Rank  = 3
+
+       CASE ( 'AEROH2OMDUST4' )
+          IF ( isDesc  ) Desc  = 'Aerosol H2O content for mineral dust (0.8 um)'
+          IF ( isUnits ) Units = 'cm3(H2O)/cm3(air)'
+          IF ( isRank  ) Rank  = 3
+
+       CASE ( 'AEROH2OMDUST5' )
+          IF ( isDesc  ) Desc  = 'Aerosol H2O content for mineral dust (1.5 um)'
+          IF ( isUnits ) Units = 'cm3(H2O)/cm3(air)'
+          IF ( isRank  ) Rank  = 3
+
+       CASE ( 'AEROH2OMDUST6' )
+          IF ( isDesc  ) Desc  = 'Aerosol H2O content for mineral dust (2.5 um)'
+          IF ( isUnits ) Units = 'cm3(H2O)/cm3(air)'
+          IF ( isRank  ) Rank  = 3
+
+       CASE ( 'AEROH2OMDUST7' )
+          IF ( isDesc  ) Desc  = 'Aerosol H2O content for mineral dust (4.0 um)'
+          IF ( isUnits ) Units = 'cm3(H2O)/cm3(air)'
+          IF ( isRank  ) Rank  = 3
+
+       CASE ( 'AEROH2OSULF' )
+          IF ( isDesc  ) Desc  = 'Aerosol H2O content for tropospheric sulfate'
+          IF ( isUnits ) Units = 'cm3(H2O)/cm3(air)'
+          IF ( isRank  ) Rank  = 3
+
+       CASE ( 'AEROH2OBC' )
+          IF ( isDesc  ) Desc  = 'Aerosol H2O content for black carbon'
+          IF ( isUnits ) Units = 'cm3(H2O)/cm3(air)'
+          IF ( isRank  ) Rank  = 3
+
+       CASE ( 'AEROH2OOC' )
+          IF ( isDesc  ) Desc  = 'Aerosol H2O content for organic carbon'
+          IF ( isUnits ) Units = 'cm3(H2O)/cm3(air)'
+          IF ( isRank  ) Rank  = 3
+
+       CASE ( 'AEROH2OSSA' )
+          IF ( isDesc  ) Desc= 'Aerosol H2O content for sea salt,' &
+                               // ' accumulation mode'
+          IF ( isUnits ) Units = 'cm3(H2O)/cm3(air)'
+          IF ( isRank  ) Rank  = 3
+
+       CASE ( 'AEROH2OSSC' )
+          IF ( isDesc  ) Desc  = 'Aerosol H2O content for sea salt, coarse mode'
+          IF ( isUnits ) Units = 'cm3(H2O)/cm3(air)'
+          IF ( isRank  ) Rank  = 3
+
+       CASE ( 'AEROH2OBGSULF' )
+          IF ( isDesc  ) Desc  = 'Aerosol H2O content for background' &
+                                // ' stratospheric sulfate'
+          IF ( isUnits ) Units = 'cm3(H2O)/cm3(air)'
+          IF ( isRank  ) Rank  = 3
+
+       CASE ( 'AEROH2OICEI' )
+          IF ( isDesc  ) Desc  = 'Aerosol H2O content for irregular ice cloud' &
+                                // ' (Mischenko)'
+          IF ( isUnits ) Units = 'cm3(H2O)/cm3(air)'
+          IF ( isRank  ) Rank  = 3
+       !!!!!!!!!! 
+       !EEM: 12/12/18
+       
+       CASE ( 'GAMMAN2O5H2O' )
+          IF ( isDesc  ) Desc  = 'Sticking coeeficient for N2O5 + H2O reaction'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 3
+       
+       CASE ( 'GAMMAN2O5HCL' )
+          IF ( isDesc  ) Desc  = 'Sticking coeeficient for N2O5 + HCl reaction'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 3
+       
+       CASE ( 'GAMMAN2O5SS' )
+          IF ( isDesc  ) Desc  = 'Sticking coeeficient for N2O5 + SS reaction'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 3
+       
+       CASE ( 'YIELDCLNO2' )
+          IF ( isDesc  ) Desc  = 'Production yield coeeficient for ClNO2 from N2O5 aerosol uptake'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 3
+
+       CASE ( 'OMOCPOA' )
+          IF ( isDesc  ) Desc  = 'OM:OC ratio for POA (from /aerosol_mod.F)'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 2
+
+       CASE ( 'OMOCOPOA' )
+          IF ( isDesc  ) Desc  = 'OM:OC ratio for OPOA (from /aerosol_mod.F)'
+          IF ( isUnits ) Units = '1'
+          IF ( isRank  ) Rank  = 2
 
        CASE ( 'STATEPSC' )
           IF ( isDesc  ) Desc  = 'Polar stratospheric cloud type (cf Kirner' &
@@ -2423,7 +2734,7 @@ CONTAINS
           IF ( isRank  ) Rank  = 3
 
        CASE ( 'KHETISLAN2O5HCL' )
-          IF ( isDesc  ) Desc  = 'Sticking coeeficient for N2O5 + H2O reaction'
+          IF ( isDesc  ) Desc  = 'Sticking coeeficient for N2O5 + HCl reaction'
           IF ( isUnits ) Units = '1'
           IF ( isRank  ) Rank  = 3
 

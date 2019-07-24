@@ -677,6 +677,8 @@ CONTAINS
        RSTATE    = 0.0_dp            ! Rosenbrock output
        SO4_FRAC  = 0.0_fp            ! Fraction of SO4 available for photolysis
        P         = 0                 ! GEOS-Chem photolyis species ID
+       !EEM: 12/12/18
+       !GAM       = 0.0_fp            ! Gamma array
 
        ! For tagged CO
        LCH4     = 0.0_fp    ! Methane loss rate
@@ -866,6 +868,11 @@ CONTAINS
                                            + HET(ind_ISOPNB,1)
              AD52(I,J,L,5) = AD52(I,J,L,5) + HET(ind_DHDN,  1)
              AD52(I,J,L,6) = AD52(I,J,L,6) + HET(ind_GLYX,  1)
+             ! EEM : 12/12/18
+             !AD52(I,J,L,7) = AD52(I,J,L,7) + GAM(ind_N2O5,  1)
+             !AD52(I,J,L,8) = AD52(I,J,L,8) + GAM(ind_N2O5,  2)
+             !AD52(I,J,L,9) = AD52(I,J,L,9) + GAM(ind_N2O5,  3)
+             !AD525(I,J,L,10) = AD52(I,J,L,10) + GAM(ind_ClNO2, 1)
           ENDIF
 #endif
 

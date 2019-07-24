@@ -510,6 +510,8 @@ else
   ifeq ($(IS_HPC),0)
      USER_DEFS       += -DBPCH_TIMESER
   endif
+  #EEM!!!: Update so that nested-grid BC's will compile by default
+  USER_DEFS       += -DBPCH_TPBC
 
 endif
 
@@ -999,8 +1001,10 @@ else
     NC_INC_CMD       := -I$(GC_INCLUDE)
 
     # NetCDF link command: 1 set of link commands
-    NC_LINK_CMD      := $(shell $(GC_BIN)/nc-config --flibs)
-
+    #NC_LINK_CMD      := $(shell $(GC_BIN)/nc-config --flibs)
+    #EEM
+    NC_LINK_CMD      := $(shell $(GC_BIN)/nc-config --libs)
+    NC_LINK_CMD      += $(shell $(GC_BIN)/nf-config --flibs)
   endif
 
 endif

@@ -4808,6 +4808,11 @@
 !  (4): GAMMAIEPOX: Uptake coef for ISOPND/ISOPNB    : unitless  : SCALECHEM
 !  (5): GAMMAIEPOX: Uptake coef for DHDN             : unitless  : SCALECHEM
 !  (6): GAMMAIEPOX: Uptake coef for GLYX             : unitless  : SCALECHEM
+!  EEM updates
+!  (7): GAMMAN2O5H2O: Uptake coef for N2O5+H2O
+!  (8): GAMMAN2O5HCl: Uptake coef for N2O5+HCl (strat only)
+!  (9): GAMMAN2O5SS : Uptake coed for N2O5 + SS
+!  (10):GAMMAClNO2  : ClNO2 YIELD from N2O5 uptake    : ''        : ''
 !******************************************************************************
       IF ( ND52 > 0 ) THEN
         CATEGORY  = 'GAMMA-$'

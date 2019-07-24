@@ -999,6 +999,10 @@ CONTAINS
              CALL HCO_ERROR( HcoState%config%Err, MSG, RC, THISLOC=LOC )
              RETURN
           ENDIF
+!!!!!!!!!!!!!
+             !MSG = 'OutOper Set ' // TRIM(cName) 
+             !MSG = TRIM(MSG) // ' (' // TRIM(OutOper) // ')'
+             !CALL HCO_ERROR( HcoState%config%Err, MSG, RC, THISLOC=LOC )
  
        ! If OutOper is not set, determine scale factors from output unit:
        ELSE
@@ -1061,7 +1065,8 @@ CONTAINS
           ! for per hour, etc. Returns -999.0 if no time unit could be found.
           CALL HCO_UNIT_GetTimeScal( OutUnit, 1, 2001, Scal, Flag )
           Scal = 1.0_dp / Scal
-        
+       !!!!!
+          !WRITE(6,*) 'SCAL FACT =', Scal 
           ! No time unit found: don't enable any switch
           IF ( Scal < 0.0_dp ) THEN 
              ! Nothing to do
@@ -3126,7 +3131,15 @@ CONTAINS
             * DgnCont%MassScal  &
             * DgnCont%AreaScal  &
             * DgnCont%ScaleFact
-
+!!!!!!!!!!!
+!    WRITE(MSG,*) 'Scale Factors: ', TRIM(DgnCont%cName), & 
+!                 ' Multi: ', mult1,' Norm: ', norm1, &
+!                 ' Mass: ', DgnCont%MassScal, & 
+!                 ' Area: ', DgnCont%AreaScal, & 
+!                 ' Scale: ', DgnCont%ScaleFact
+!    CALL HCO_ERROR( HcoState%Config%Err, MSG, RC, THISLOC=LOC )
+    !WRITE(MSG,*) TRIM(DgnCon%cName)
+!    WRITE(6,*) 'TOTSCAL = ', totscal
     ! For 3D:
     IF ( DgnCont%SpaceDim == 3 ) THEN
        DO J = 1, ThisColl%NY

@@ -4283,7 +4283,7 @@ CONTAINS
       IF ( FOUND ) THEN
          State_Chm%SO2AfterChem = Ptr3D
          IF ( am_I_Root ) THEN
-            WRITE(6,*) 'Initialize dry deposited nitrogen from restart file'
+            WRITE(6,*) 'Initialize SO2 from restart file'
             WRITE(6,200) MINVAL( State_Chm%SO2AfterChem(:,:,:) ), & 
                          MAXVAL( State_Chm%SO2AfterChem(:,:,:) ) 
 200         FORMAT( 12x, ' SO2_AChem: Min = ', es15.9, ', Max = ', es15.9 )

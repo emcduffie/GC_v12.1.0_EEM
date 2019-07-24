@@ -364,6 +364,8 @@
       USE ErrCode_Mod
       USE PhysConstants            ! Scale height
       USE State_Met_Mod,      ONLY : MetState
+!!!
+      USE GC_GRID_MOD,        ONLY : GET_XMID
 !
 ! !INPUT PARAMETERS:
 !
@@ -401,7 +403,7 @@
 !
       LOGICAL  :: Bad_Sum
       INTEGER  :: I,     J,      L,    LTOP
-      REAL(fp) :: BLTOP, BLTHIK, DELP
+      REAL(fp) :: BLTOP, BLTHIK, DELP, test
       REAL(fp) :: P(0:LLPAR)
 
       !=================================================================
@@ -546,14 +548,14 @@
             ENDIF 
 
 !### Debug
-!            IF ( I==23 .and. J==34 .and. L < 6 ) THEN 
+!            IF ( I==1 .and. J==46 .and. L < 6 ) THEN 
 !               PRINT*, '###--------------------------------------'
 !               PRINT*, '### COMPUTE_PBL_HEIGHT'
-!               PRINT*, '### I, J, L     : ', I, J, L
+!                PRINT*, '### I, J, L     : ', I, J, L
 !               PRINT*, '### P(L-1)      : ', P(L-1)
-!               PRINT*, '### P(L)        : ', P(L)
+!                PRINT*, '### P(L)        : ', P(1)
 !               PRINT*, '### PBL(I,J)    : ', PBL(I,J)
-!               PRINT*, '### F_OF_PBL    : ', F_OF_PBL(I,J,L)
+!                PRINT*, '### F_OF_PBL    : ', F_OF_PBL(I,J,L)
 !               PRINT*, '### F_UNDER_TOP : ', F_UNDER_TOP(I,J,L)
 !               PRINT*, '### IMIX        : ', IMIX(I,J)
 !               PRINT*, '### FPBL        : ', FPBL(I,J)
@@ -574,6 +576,8 @@
          IF (ABS(SUM( F_OF_PBL(I,J,:) ) - 1.e+0_fp) > 1.e-3_fp) THEN
 !$OMP CRITICAL
             PRINT*, 'bad sum at: ', I, J
+!            test = GET_XMID(I,J,1)
+!            PRINT*,  '### XMID   :  ', test
             Bad_Sum = .TRUE.
 !$OMP END CRITICAL
          ENDIF
