@@ -1205,6 +1205,7 @@ CONTAINS
              Is_Gas        = T
              Is_Drydep     = F
              Is_Wetdep     = F
+             Is_Photolysis = T
 
           CASE( 'DHDN' )
              ! DHDN uses the same DD_F0 and DD_Hstar_old values as ISOPN
@@ -1215,7 +1216,6 @@ CONTAINS
              Is_Gas        = T
              Is_Drydep     = T
              Is_Wetdep     = T
-             Is_Photolysis = T
              DD_F0         = 1.0_fp
              DD_Hstar_Old  = 2.00e+6_fp
              Henry_K0      = 2.00e+6_f8
