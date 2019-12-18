@@ -2757,6 +2757,9 @@
       ! DTCHEM is the chemistry timestep in seconds
       DTCHEM   = GET_TS_CHEM()
 
+      ! GanLuo (EEM)
+      PSO4s = 0.D0
+
       ! Factor to convert AIRDEN from [kg air/m3] to [molec air/cm3]
       F        = 1000.e+0_fp / AIRMW * AVO * 1.e-6_fp
 
@@ -3045,7 +3048,7 @@
 !     &             1e-3_fp
          IF(SIZE(QQ3D)>1)THEN
             LWC  = State_Met%QL(I,J,L) * State_Met%AIRDEN(I,J,L) *
-     &             1e-3_fp + MAX(0.d0, QQ3D(L,I,J) * DTCHEM)
+     &             1e-3_fp + MAX(0.0_fp, QQ3D(L,I,J) * DTCHEM)
          ELSE
             LWC  = State_Met%QL(I,J,L) * State_Met%AIRDEN(I,J,L) * 
      &             1e-3_fp
@@ -3793,11 +3796,17 @@
          PSO4_SO2(I,J,L) = L1 + L2S + L3S + L4S + L5S + PSO4E + SR
 
          ! GanLuo (EEM)
-         PSO4s(I,J,L)    = L2S + L3S + L4S + L5S + PSO4E + PSO4F + SR
-         PSO4s(I,J,L)    = PSO4s(I,J,L) *
-     &                     State_Met%AD(I,J,L) / (AIRMW / 
-     &                     State_Chm%SpcData(id_SO4)%Info%emMW_g )
-  
+         IF((PSO4_SO2(I,J,L)+Spc(I,J,L,id_SO4))>1.0e-30_fp)THEN
+!           PSO4s(I,J,L)    = L2S + L3S + L4S + L5S + PSO4E + PSO4F + SR
+           PSO4s(I,J,L) = L2S + L3S + L4S + L5S + SR
+!           PSO4s(I,J,L)    = PSO4s(I,J,L) *
+!      &                     State_Met%AD(I,J,L) / (AIRMW / 
+!      &                     State_Chm%SpcData(id_SO4)%Info%emMW_g )
+            PSO4s(I,J,L) = PSO4s(I,J,L)/(PSO4_SO2(I,J,L)+
+     &                     Spc(I,J,L,id_SO4))
+         ELSE
+            PSO4s(I,J,L) = 0.D0
+         ENDIF
          ! Production of sulfate on sea salt
          PSO4_ss (I,J,L) = PSO4F
 

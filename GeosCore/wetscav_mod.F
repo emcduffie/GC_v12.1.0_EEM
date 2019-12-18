@@ -48,6 +48,7 @@
       PRIVATE :: GET_RAINFRAC
       PRIVATE :: SAFETY
       PRIVATE :: WASHFRAC_FINE_AEROSOL
+      PRIVATE :: WASHFRAC_FINE_AEROSOLEW
       PRIVATE :: WASHFRAC_COARSE_AEROSOL
       PRIVATE :: WASHFRAC_LIQ_GAS
       PRIVATE :: WASHFRAC_HNO3
@@ -630,11 +631,14 @@
      &                 * ( State_Met%AIRDEN(I,J,L)      / 1000.0_fp )
 
 
-            ! Column precipitation [cm3 H2O/cm2 air/s]
-         PDOWN(L,I,J)  = ( ( State_Met%PFLLSAN(I,J,L+1) / 1000.0_fp )
-     &                 +   ( State_Met%PFILSAN(I,J,L+1) /  917.0_fp ) )
+          ! Column precipitation [cm3 H2O/cm2 air/s]
+!         PDOWN(L,I,J)  = ( ( State_Met%PFLLSAN(I,J,L+1) / 1000.0_fp )
+!     &                 +   ( State_Met%PFILSAN(I,J,L+1) /  917.0_fp ) )
+!     &                 * 100.0_fp
+          ! GanLuo (EEM)
+          PDOWN(L,I,J)  = ( ( State_Met%PFLLSAN(I,J,L) / 1000.0_fp )
+     &                 +   ( State_Met%PFILSAN(I,J,L) /  917.0_fp ) )
      &                 * 100.0_fp
-
       ENDDO
       ENDDO  
       ENDDO
@@ -644,7 +648,7 @@
 !EOC
 !------------------------------------------------------------------------------
 !                  GEOS-Chem Global Chemical Transport Model                  !
-!------------------------------------------------------------------------------
+!---------------------------------------i---------------------------------------
 !BOP
 !
 ! !IROUTINE: e_ice
@@ -975,10 +979,12 @@
       ! to be a gas-phase species elsewhere (e.g. dry deposition)
       !=================================================================
       IF ( SpcInfo%WD_Is_SO2 ) THEN
-
+          
+         !GanLuo (EEM)
+         F = 0.0_fp
          ! Compute fraction of SO2 scavenged
          CALL F_AEROSOL( KC, KcScale, State_Met, Input_Opt, F )
-
+         
          !--------------------------------------------------------------
          ! Coupled full chemistry/aerosol simulation:
          ! Use the wet scavenging formula of Chin et al [1996], 
@@ -1968,7 +1974,7 @@
          KIN      = .TRUE.
          ! GanLuo (EEM)
          !WASHFRAC = WASHFRAC_FINE_AEROSOL( DT, F, PP, TK )
-         WASHFRAC = 0.D0
+         WASHFRAC = 0.0e+0_fp
 
          ! Use the wet-scavenging following [Chin et al, 1996] such 
          ! that a soluble fraction of SO2 is limited by the availability 
@@ -2057,10 +2063,10 @@
          ! Compute washout fraction
 !         WASHFRAC = WASHFRAC_FINE_AEROSOL( DT, F, PP, TK )
          ! GanLuo Updates - only apply empirical washout to water soluble species (EEM)
-         IF(SpcInfo%WD_RainoutEff(3)<0.99D0) THEN
+         IF(SpcInfo%WD_RainoutEff(3) < 0.999_fp) THEN
             WASHFRAC = WASHFRAC_FINE_AEROSOL( DT, F, PP, TK)
          ELSE
-            WASHFRAC = WASHFRAC_FINE_AEROSOL_EW( DT, F, PP, TK)
+            WASHFRAC = WASHFRAC_FINE_AEROSOLEW( DT, F, PP, TK)
          ENDIF
       ENDIF
 
@@ -2203,16 +2209,16 @@
 !------------------------------------------------------------------------------
 !BOP
 !
-! !IROUTINE: washfrac_fine_aerosol_ew
+! !IROUTINE: washfrac_fine_aerosolew
 !
-! !DESCRIPTION: Function WASHFRAC\_FINE\_AEROSOL\_EW returns the fraction of
+! !DESCRIPTION: Function WASHFRAC\_FINE\_AEROSOLEW returns the fraction of
 !  soluble aerosol species lost to washout. Calculated with empirical update
 !  from Luo et al., (GMDD) 2019
 !\\
 !\\
 ! !INTERFACE:
 !
-      FUNCTION WASHFRAC_FINE_AEROSOL_EW( DT, F, PP, TK ) 
+      FUNCTION WASHFRAC_FINE_AEROSOLEW( DT, F, PP, TK ) 
      &         RESULT( WASHFRAC )
 !
 ! !USES:
@@ -2274,12 +2280,12 @@
          ! GanLuo (EEM)
 !            WASHFRAC = F *(1e+0_fp - EXP( -K_WASH * 
 !     &              (PP / F*3.6e+4_fp )**0.61e+0_fp * DT / 3.6e+3_fp ))
-             RATE = 10.D0**(274.35758D0+
-     &              332839.59273D0*(log10(0.5D-6))**-4.D0+
-     &              226656.57259D0*(log10(0.5D-6))**-3.D0+
-     &              58005.91340D0*(log10(0.5D-6))**-2.D0+
-     &              6588.38582D0*(log10(0.5D-6))**-1.D0+
-     &              0.244984D0*SQRT(MIN(20.D0,(PP*36000.D0/F))))
+             RATE = 10.e+0_fp**(274.35758e+0_fp+
+     &              332839.59273_fp*(log10(0.5e-6_fp))**(-4)+
+     &              226656.57259_fp*(log10(0.5e-6_fp))**(-3)+
+     &              58005.91340_fp*(log10(0.5e-6_fp))**(-2)+
+     &              6588.38582_fp/(log10(0.5e-6_fp))+
+     &              0.244984_fp*SQRT(MIN(20.e+0_fp,(PP*36000.e+0/F))))
              WASHFRAC = F * (1e+0_fp - EXP(-RATE * DT))
          ELSE
             WASHFRAC = 0e+0_fp
@@ -2298,7 +2304,7 @@
 
       ENDIF
 
-      END FUNCTION WASHFRAC_FINE_AEROSOL_EW
+      END FUNCTION WASHFRAC_FINE_AEROSOLEW
 !EOC
 !------------------------------------------------------------------------------
 !                  GEOS-Chem Global Chemical Transport Model                  !
@@ -2571,8 +2577,8 @@
          IF ( F > 0e+0_fp ) THEN
             ! GanLuo (EEM)
             !WASHFRAC = F * (1e+0_fp - EXP(-K_WASH * (PP / F) * DT))
-            RATE = 2.D0*((PP/F)**0.62)
-            WASHFRAC = F * (1e+0_fp - EXP( - RATE * DT ))
+            RATE = 2.e+0_fp*((PP/F)**(0.62e+0_fp))
+            WASHFRAC = F * (1e+0_fp - EXP( -RATE * DT ))
          ELSE
             WASHFRAC = 0e+0_fp
          ENDIF
@@ -2998,6 +3004,7 @@
 !$OMP+PRIVATE( F_RAINOUT,   F_WASHOUT,  K_RAIN,      Q          )       
 !$OMP+PRIVATE( QDOWN,       IS_RAINOUT, IS_WASHOUT,  N          ) 
 !$OMP+PRIVATE( DEP_HG,      SpcInfo,    Hg_Cat,      EC         )
+!$OMP+PRIVATE( COND_WATER_CONTENT )
 !$OMP+SCHEDULE( DYNAMIC )   
       DO J = 1, JJPAR
       DO I = 1, IIPAR
@@ -3046,7 +3053,7 @@
             ! Q is the new precip that is forming within grid box (I,J,L)
             Q = QQ(L,I,J)
             ! GanLuo (EEM)
-            COND_WATER_CONTENT = MAX(1.D-30,(QQ(L,I,J)*DT+
+            COND_WATER_CONTENT = MAX(1.e-30_fp,(QQ(L,I,J)*DT+
      &      State_Met%QL(I,J,L)*State_Met%AIRDEN(I,J,L)*1e-3_fp))
 
             ! Compute K_RAIN and F_RAINOUT for large-scale 
@@ -3055,8 +3062,8 @@
             !K_RAIN  = LS_K_RAIN( Q )
             !F_RAINOUT = LS_F_PRIME( Q, K_RAIN )
             K_RAIN    = LS_K_RAIN( QQ(L,I,J), COND_WATER_CONTENT )
-            F_RAINOUT = MAX(1.D-4,State_Met%CLDF(I,J,L))
-            F_RAINOUT = F_RAINOUT*MIN(1.D0,QQ(L,I,J)/
+            F_RAINOUT = MAX(1.e-4_fp,State_Met%CLDF(I,J,L))
+            F_RAINOUT = F_RAINOUT*MIN(1.e+0_fp,QQ(L,I,J)/
      &                  (COND_WATER_CONTENT*K_RAIN))
             
             ! Set F = F_RAINOUT, since there is no FTOP at L = LLPAR
@@ -3128,11 +3135,11 @@
                ! GanLuo (EEM)
                !K_RAIN  = LS_K_RAIN( QQ(L,I,J) )
                !F_PRIME = LS_F_PRIME( QQ(L,I,J), K_RAIN )
-               COND_WATER_CONTENT = MAX(1.D-30,(QQ(L,I,J)*DT+
+               COND_WATER_CONTENT = MAX(1.e-30_fp,(QQ(L,I,J)*DT+
      &         State_Met%QL(I,J,L)*State_Met%AIRDEN(I,J,L)*1e-3_fp))
                K_RAIN  = LS_K_RAIN( QQ(L,I,J), COND_WATER_CONTENT )
-               F_PRIME = MAX(1.D-4,State_Met%CLDF(I,J,L))
-               F_PRIME = F_PRIME*MIN(1.D0,QQ(L,I,J)/
+               F_PRIME = MAX(1.e-4_fp,State_Met%CLDF(I,J,L))
+               F_PRIME = F_PRIME*MIN(1.e+0_fp,QQ(L,I,J)/
      &                   (K_RAIN*COND_WATER_CONTENT))
             ELSE
                
@@ -3844,8 +3851,9 @@
          ! GanLuo (EEM)
          IF(N==id_SO4)THEN
          IF(Spc(I,J,L,N)>1.D-30)THEN
-            RAINFRAC = RAINFRAC *
-     &     (1.D0-0.5D0*MIN(Spc(I,J,L,N),PSO4s(I,J,L))/Spc(I,J,L,N))
+!            RAINFRAC = RAINFRAC *
+!     &     (1.D0-0.5D0*MIN(Spc(I,J,L,N),PSO4s(I,J,L))/Spc(I,J,L,N))
+             RAINFRAC = RAINFRAC * EXP( -PSO4s(I,J,L) )
          ENDIF
          ENDIF
 
