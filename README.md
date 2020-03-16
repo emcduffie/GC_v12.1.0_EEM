@@ -1,5 +1,3 @@
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1343546.svg)](https://doi.org/10.5281/zenodo.1343546) [![Build
-Status](https://travis-ci.org/JiaweiZhuang/geos-chem.svg?branch=travis_ci)](https://travis-ci.org/JiaweiZhuang/geos-chem)
 
 # README for the GEOS-Chem Source code repository
 
