@@ -1,7 +1,7 @@
 
-# README for the GEOS-Chem Source code repository
+# README for the Official GEOS-Chem Source code repository
 
-This repository (https://github.com/gcst/geos-chem) contains the source code for the GEOS-Chem model of atmospheric chemistry and composition. 
+The Official GEOS-Chem repository (https://github.com/gcst/geos-chem) contains the source code for the GEOS-Chem model of atmospheric chemistry and composition. 
 
 ## We have migrated from Bitbucket to Github!
 As of June 2018, we have migrated the GEOS-Chem source code repository to back Github.  Going forward, please make sure to clone or pull code updates ONLY from this repository.
