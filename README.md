@@ -1,3 +1,41 @@
+# GEOS-CHem v12.1.0 - Updated for GBD-MAPS project
+
+The default GEOS-Chem v12.1.0 source code (https://doi.org/10.5281/zenodo.1553349) was updated to include the following:
+
+1. Parameterization for N2O5 heterogneous uptake - following McDuffie et al., 2018a (implmented in default GCv12.6.0 https://doi.org/10.5281/zenodo.3507501)
+2. Heterogeneous production of ClNO2 from sea salt aerosol - following implmentation in Shah et al., 2018 and ClNO2 yield recommendations from McDuffie et al., 2018b
+3. Reduced dry deposition rates for HNO3 at cold temperatures - following Shah et al., 2018 (implmented in default GCv12.6.0 https://doi.org/10.5281/zenodo.3507501)
+4. Updated wet deposition scheme - following Luo et al., 2019 (updated version now included as option starting in GCv12.7.0 https://doi.org/10.5281/zenodo.3634864)
+
+Additional minor updates (bug fixes) from later versions of the default GEOS-Chem source code included in this code include:
+1. Updated HEMCO_config.rc file to read in the uodated MEGAN/2018-05 PFT (plant functional type) file (update in 12.3.0: http://wiki.seas.harvard.edu/geos-chem/index.php/GEOS-Chem_12#12.3.0) 
+2. Updated MEGAN extension to correctly calcuatle monoterpene concentraions (bug fix in v12.3.0: http://wiki.seas.harvard.edu/geos-chem/index.php/GEOS-Chem_12#12.3.0)
+2. Changed erruptive volcanic emisssions to 'R' in HEMCO_Config.rc file, maintained 'C' cycling for degassing emissions (bug fix in 12.3.0: http://wiki.seas.harvard.edu/geos-chem/index.php/GEOS-Chem_12#12.3.0)
+4. Turned on photoloysis for DHDC and turned off photolysis for DHDN (update in 12.3.2: http://wiki.seas.harvard.edu/geos-chem/index.php/GEOS-Chem_12#12.3.2) 
+5. Removed CO from MEGAN HEMCO extension to avoid double counting (updated in 12.5.0)
+6. Updated volanic emissions to AeroCom (extended to 2018) (updated in 12.3.0, 12.4.0, and 12.5.0: http://wiki.seas.harvard.edu/geos-chem/index.php/GEOS-Chem_12#12.5.0)
+7. Fixed heterogeneous cloud parameters in the HetRates file (update in 12.5.0: http://wiki.seas.harvard.edu/geos-chem/index.php/GEOS-Chem_12#12.5.0)
+8. Changed stratospheric Bry $MM in HEMCO_Config to 1-12 to make sure emissions are read correctly each moth (v12.5.0: http://wiki.seas.harvard.edu/geos-chem/index.php/GEOS-Chem_12#12.5.0)
+9. Removed 27% scaling factor for POG from GFEd emissions (updated in 12.5.0, from Pai et al., 2019)
+10. Updated GFED emissions to the 4s beta version (updated in v12.8.0: http://wiki.seas.harvard.edu/geos-chem/index.php/GEOS-Chem_12#12.8.0)
+
+
+### References:
+Luo G, Yu F, & Schwab J (2019) Revised treatment of wet scavenging processes dramatically improves GEOS-Chem 12.0.0 simulations of nitric acid, nitrate, and ammonium over the United States. Geosci. Model Dev. Discuss. 2019:1-18.
+
+McDuffie EE, et al. (2018a) Heterogeneous N2O5 Uptake During Winter: Aircraft Measurements During the 2015 WINTER Campaign and Critical Evaluation of Current Parameterizations. J. Geophys. Res. Atmos. 123(8):4345-4372.
+
+McDuffie EE, et al. (2018b) ClNO2 Yields From Aircraft Measurements During the 2015 WINTER Campaign and Critical Evaluation of the Current Parameterization. J. Geophys. Res. Atmos. 123(22):12,994-913,015.
+
+Pai SJ, et al. (2019) An evaluation of global organic aerosol schemes using airborne observations. Atmos. Chem. Phys. Discuss. 2019:1-39.
+
+Shah V, et al. (2018) Chemical feedbacks weaken the wintertime response of particulate sulfate and nitrate to emissions reductions over the eastern United States. P. Natl. Acad. Sci. 115:8110-8115.
+
+
+****
+The following is the README from the official GEOS-Chem Source code repository
+****
+
 
 # README for the Official GEOS-Chem Source code repository
 
