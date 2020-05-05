@@ -1,4 +1,4 @@
-# GEOS-CHem v12.1.0 - Updated for GBD-MAPS project
+# GEOS-Chem v12.1.0 - Updated for GBD-MAPS project
 
 The default GEOS-Chem v12.1.0 source code (https://doi.org/10.5281/zenodo.1553349) was updated to include the following:
 
