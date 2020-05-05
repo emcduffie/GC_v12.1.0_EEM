@@ -2,12 +2,12 @@
 
 The default GEOS-Chem v12.1.0 source code (https://doi.org/10.5281/zenodo.1553349) was updated to include the following:
 
-1. Parameterization for N2O5 heterogneous uptake - following McDuffie et al., 2018a (implmented in default GCv12.6.0 https://doi.org/10.5281/zenodo.3507501)
+1. Parameterization for N2O5 heterogneous uptake - following McDuffie et al., 2018a (impelmented in default GCv12.6.0 https://doi.org/10.5281/zenodo.3507501)
 2. Heterogeneous production of ClNO2 from sea salt aerosol - following implmentation in Shah et al., 2018 and ClNO2 yield recommendations from McDuffie et al., 2018b
-3. Reduced dry deposition rates for HNO3 at cold temperatures - following Shah et al., 2018 (implmented in default GCv12.6.0 https://doi.org/10.5281/zenodo.3507501)
-4. Updated wet deposition scheme - following Luo et al., 2019 (updated version now included as option starting in GCv12.7.0 https://doi.org/10.5281/zenodo.3634864)
+3. Reduced dry deposition rates for HNO3 at cold temperatures - following Shah et al., 2018 (implemented in default GCv12.6.0 https://doi.org/10.5281/zenodo.3507501)
+4. Updated wet deposition scheme - following Luo et al., 2019 (updated version included as an option starting in GCv12.7.0 https://doi.org/10.5281/zenodo.3634864)
 
-Additional minor updates (bug fixes) from later versions of the default GEOS-Chem source code included in this code include:
+Additional minor updates (bug fixes) from later versions of the default GEOS-Chem source code included here:
 1. Updated HEMCO_config.rc file to read in the uodated MEGAN/2018-05 PFT (plant functional type) file (update in 12.3.0: http://wiki.seas.harvard.edu/geos-chem/index.php/GEOS-Chem_12#12.3.0) 
 2. Updated MEGAN extension to correctly calcuatle monoterpene concentraions (bug fix in v12.3.0: http://wiki.seas.harvard.edu/geos-chem/index.php/GEOS-Chem_12#12.3.0)
 2. Changed erruptive volcanic emisssions to 'R' in HEMCO_Config.rc file, maintained 'C' cycling for degassing emissions (bug fix in 12.3.0: http://wiki.seas.harvard.edu/geos-chem/index.php/GEOS-Chem_12#12.3.0)
