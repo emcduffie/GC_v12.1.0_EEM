@@ -1,5 +1,7 @@
 # GEOS-Chem v12.1.0 - Updated for GBD-MAPS project
 
+https://zenodo.org/record/4718622
+
 The default GEOS-Chem v12.1.0 source code (https://doi.org/10.5281/zenodo.1553349) was updated to include the following:
 
 1. Parameterization for N2O5 heterogneous uptake - following McDuffie et al., 2018a (impelmented in default GCv12.6.0 https://doi.org/10.5281/zenodo.3507501)
